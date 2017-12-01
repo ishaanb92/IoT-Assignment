@@ -2,6 +2,7 @@
 import tensorflow as tf
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 """ Helper functions for NN """
 def generate_batch(data,labels,batch_size):
@@ -24,7 +25,7 @@ def load_data(fileName):
 epochs = 100
 batch_size = 256
 start_learning_rate = 1e-3
-lmb = 0.5
+lmb = 0.05
 #Place holders for data
 x = tf.placeholder(tf.float64,[None,7])
 y = tf.placeholder(tf.float64,[None])
@@ -60,6 +61,10 @@ print('Tunable parameters : {}'.format(len(params)))
 gradients = tf.gradients(cost, params)
 gradient_norm = tf.global_norm(gradients)
 with tf.Session() as sess:
+    train_loss = []
+    val_loss = []
+    steps = []
+    norm = []
     sess.run(init)
     X_train = load_data('data_train.pkl')
     labels_train = load_data('labels_train.pkl')
@@ -67,15 +72,34 @@ with tf.Session() as sess:
     labels_val = load_data('labels_val.pkl')
     batches_per_epoch = X_train.shape[0]//batch_size
     print('Batches per epoch : {}'.format(batches_per_epoch))
-    for ep in range(epochs):
-        for step in range(batches_per_epoch):
-            batch_data,batch_labels = generate_batch(data=X_train,labels=labels_train,batch_size = batch_size)
-            sess.run([train_step],feed_dict={x:batch_data,y:np.sqrt(batch_labels)})
-            if step%10 == 0:
-                grad_norm = sess.run([gradient_norm],feed_dict={x:batch_data,y:np.sqrt(batch_labels)})
-                print('Epoch {} Step {} :: Gradient norm : {}'.format(ep,step,grad_norm))
-                print('Epoch {} Step {} :: Training cost : {}'.format(ep,step,sess.run([cost],feed_dict={x:batch_data,y:np.sqrt(batch_labels)})))
-                print('Epoch {} Step {} :: Validation cost: {}'.format(ep,step,sess.run([cost],feed_dict={x:X_val,y:np.sqrt(labels_val)})))
-                #print('Epoch {} Step {} :: Predicted : {} True {}'.format(ep,step,sess.run([out],feed_dict={x:batch_data,y:batch_labels}),batch_labels))
+    for step in range(batches_per_epoch*epochs):
+        batch_data,batch_labels = generate_batch(data=X_train,labels=labels_train,batch_size = batch_size)
+        sess.run([train_step],feed_dict={x:batch_data,y:np.divide(batch_labels,1000)})
+        if step%10 == 0:
+            steps.append(step)
+            grad_norm = sess.run(gradient_norm,feed_dict={x:batch_data,y:np.divide(batch_labels,1000)})
+            train_cost = sess.run(loss,feed_dict={x:batch_data,y:np.divide(batch_labels,1000)})
+            val_cost = sess.run(loss,feed_dict={x:X_val,y:np.divide(labels_val,1000)})
+            train_loss.append(train_cost)
+            val_loss.append(val_cost)
+            norm.append(grad_norm)
+            print('Step {} :: Gradient norm : {}'.format(step,grad_norm))
+            print('Step {} :: Training cost : {}'.format(step,train_cost))
+            print('Step {} :: Validation cost: {}'.format(step,val_cost))
+    #Plot
+    plt.figure(1)
+    plt.subplot(211)
+    plt.plot(steps,train_loss,'r',label='Train Loss')
+    plt.plot(steps,val_loss,'b',label='Val Loss')
+    plt.xlabel('Steps')
+    plt.ylabel('Loss')
+    plt.legend(loc = 'upper left')
+    plt.subplot(212)
+    plt.plot(steps,norm,label='Gradient Norm')
+    plt.xlabel('Steps')
+    plt.ylabel('Gradient Norm')
+    plt.legend(loc = 'upper left')
+    plt.show()
+
 
 

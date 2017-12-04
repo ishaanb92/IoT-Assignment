@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import tensorflow as tf
 import pickle
 import numpy as np
@@ -24,25 +24,25 @@ def load_data(fileName):
 # Hyper-parameters
 epochs = 500
 batch_size = 256
-start_learning_rate = 5*1e-4
+learning_rate = 5*1e-3
 lmb = 0.05
 #Place holders for data
 x = tf.placeholder(tf.float64,[None,7])
 y = tf.placeholder(tf.float64,[None])
 #Hidden Layer 1
-Wh_1 = tf.Variable(tf.truncated_normal([7,64], mean=0.0, stddev=1.0/np.sqrt(7), dtype=tf.float64),name = 'Wh_1')
-bh_1 = tf.Variable(tf.zeros(shape= [64],dtype=tf.float64),name = 'bh_1')
+Wh_1 = tf.Variable(tf.truncated_normal([7,16], mean=0.0, stddev=1.0/np.sqrt(7), dtype=tf.float64),name = 'Wh_1')
+bh_1 = tf.Variable(tf.zeros(shape= [16],dtype=tf.float64),name = 'bh_1')
 out1 = tf.nn.relu(tf.add(tf.matmul(x,Wh_1),bh_1))
 #Hidden Layer 2
-Wh_2 = tf.Variable(tf.truncated_normal([64,64], mean=0.0, stddev=1.0/np.sqrt(64), dtype=tf.float64),name = 'Wh_2')
-bh_2 = tf.Variable(tf.zeros(shape= [64],dtype=tf.float64),name = 'bh_2')
+Wh_2 = tf.Variable(tf.truncated_normal([16,16], mean=0.0, stddev=1.0/np.sqrt(16), dtype=tf.float64),name = 'Wh_2')
+bh_2 = tf.Variable(tf.zeros(shape= [16],dtype=tf.float64),name = 'bh_2')
 out2 = tf.nn.relu(tf.add(tf.matmul(out1,Wh_2),bh_2))
 #Hidden Layer 3
 #Wh_3 = tf.Variable(tf.truncated_normal([3,2], mean=0.0, stddev=1.0/np.sqrt(3), dtype=tf.float64),name = 'Wh_3')
 #bh_3 = tf.Variable(tf.zeros(shape= [2],dtype=tf.float64),name = 'bh_3')
 #out3 = tf.nn.relu(tf.add(tf.matmul(out2,Wh_3),bh_3))
 #Output
-W_out = tf.Variable(tf.truncated_normal([64,1], mean=0.0, stddev=1.0/np.sqrt(64), dtype=tf.float64),name = 'W_out')
+W_out = tf.Variable(tf.truncated_normal([16,1], mean=0.0, stddev=1.0/np.sqrt(16), dtype=tf.float64),name = 'W_out')
 b_out = tf.Variable(tf.zeros(shape=[1],dtype=tf.float64),name = 'b_out')
 out = tf.add(tf.matmul(out2,W_out),b_out)
 #Regularization
@@ -52,8 +52,8 @@ cost = tf.reduce_mean(tf.square(tf.subtract(y,out)))
 loss = tf.reduce_mean(cost + lmb*regularizers)
 #Train step
 global_step = tf.Variable(0, trainable=False)
-learning_rate = tf.train.exponential_decay(start_learning_rate, global_step,1000, 0.1, staircase=True)
-train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss)
+#learning_rate = tf.train.exponential_decay(start_learning_rate, global_step,1000, 0.1, staircase=True)
+train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
 init = tf.global_variables_initializer()
 params = tf.trainable_variables()
 print('Tunable parameters : {}'.format(len(params)))
